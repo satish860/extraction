@@ -4,6 +4,8 @@ import "./globals.css";
 
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { Button } from "@/components/ui/button"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 const nunito = Nunito({
   variable: "--font-nunito",
@@ -29,12 +31,30 @@ export default function RootLayout({
         <SidebarProvider>
           <AppSidebar />
           <SidebarInset>
-            <header className="flex h-16 shrink-0 items-center gap-2 px-4 border-b">
-              <SidebarTrigger className="-ml-1" />
-            </header>
-            <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-              {children}
-            </div>
+            <Tabs defaultValue="build" className="flex flex-col h-full">
+              <header className="flex h-16 shrink-0 items-center justify-between px-4 border-b">
+                <div className="flex items-center gap-4">
+                  <SidebarTrigger className="-ml-1" />
+                  <span className="text-sm text-muted-foreground">Home</span>
+                </div>
+                
+                <div className="flex items-center">
+                  <TabsList>
+                    <TabsTrigger value="build">Build</TabsTrigger>
+                    <TabsTrigger value="review">Review</TabsTrigger>
+                    <TabsTrigger value="automate">Automate</TabsTrigger>
+                  </TabsList>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Button variant="outline">Export</Button>
+                  <Button>Share</Button>
+                </div>
+              </header>
+              <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+                {children}
+              </div>
+            </Tabs>
           </SidebarInset>
         </SidebarProvider>
       </body>
