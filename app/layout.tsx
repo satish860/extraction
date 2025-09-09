@@ -29,18 +29,8 @@ export default function RootLayout({
         <SidebarProvider>
           <AppSidebar />
           <SidebarInset>
-            <header className="flex h-16 shrink-0 items-center gap-2 px-4">
+            <header className="flex h-16 shrink-0 items-center gap-2 px-4 border-b">
               <SidebarTrigger className="-ml-1" />
-              <div className="ml-auto flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Demo CIM</span>
-                <div className="flex items-center gap-1">
-                  <button className="rounded bg-muted px-2 py-1 text-xs">Build</button>
-                  <button className="rounded bg-muted px-2 py-1 text-xs">Review</button>
-                  <button className="rounded bg-muted px-2 py-1 text-xs">Automate</button>
-                  <button className="rounded bg-muted px-2 py-1 text-xs">Export</button>
-                  <button className="rounded bg-primary px-2 py-1 text-xs text-primary-foreground">Share</button>
-                </div>
-              </div>
             </header>
             <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
               {children}
