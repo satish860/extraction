@@ -96,12 +96,11 @@ export default function Home() {
         accessorKey: "file",
         header: () => (
           <div className="flex items-center gap-1">
-            <span className="text-sm">📄</span>
-            <span className="text-sm font-medium">File</span>
+            <span className="text-sm font-semibold">File</span>
           </div>
         ),
         cell: ({ getValue }) => (
-          <div className="text-muted-foreground">
+          <div className="text-gray-500 text-sm font-medium">
             {getValue() as string}
           </div>
         ),
@@ -110,12 +109,11 @@ export default function Home() {
         accessorKey: "ai",
         header: () => (
           <div className="flex items-center gap-1">
-            <span className="text-sm">🤖</span>
-            <span className="text-sm font-medium">AI</span>
+            <span className="text-sm font-semibold">AI</span>
           </div>
         ),
         cell: ({ getValue }) => (
-          <div className="text-muted-foreground">
+          <div className="text-gray-500 text-sm font-medium">
             {getValue() as string}
           </div>
         ),
@@ -127,11 +125,11 @@ export default function Home() {
       id: col.id,
       header: () => (
         <div className="flex items-center gap-1">
-          <span className="text-sm font-medium">{col.name}</span>
+          <span className="text-sm font-semibold">{col.name}</span>
         </div>
       ),
       cell: ({ row }) => (
-        <div className="text-muted-foreground">
+        <div className="text-gray-500 text-sm font-medium">
           {row.original.dynamicColumns?.[col.id] || "Waiting for configuration..."}
         </div>
       ),
@@ -170,18 +168,12 @@ export default function Home() {
   })
 
   return (
-    <div className="space-y-4">
+    <div>
       <TabsContent value="build">
-        <div className="space-y-4">
-          <div className="flex items-center justify-end gap-2 mb-4">
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <span className="text-base">⋯</span>
-            </Button>
-          </div>
-          
+        <div>
           {/* Table wrapped in Popover */}
           <Popover open={isAddColumnOpen} onOpenChange={setIsAddColumnOpen}>
-            <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+            <div className="bg-white">
             <Table className="border-collapse">
               <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (

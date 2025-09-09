@@ -32,8 +32,8 @@ export default function RootLayout({
           <AppSidebar />
           <SidebarInset>
             <Tabs defaultValue="build" className="flex flex-col h-full">
-              <header className="flex h-16 shrink-0 items-center justify-between px-4 border-b">
-                <div className="flex items-center gap-4">
+              <header className="flex h-16 shrink-0 items-center justify-between px-4">
+                <div className="flex items-center gap-2">
                   <SidebarTrigger className="-ml-1" />
                   <span className="text-sm text-muted-foreground">Home</span>
                 </div>
@@ -51,7 +51,7 @@ export default function RootLayout({
                   <Button>Share</Button>
                 </div>
               </header>
-              <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+              <div className="flex flex-1 flex-col">
                 {children}
               </div>
             </Tabs>
