@@ -3,6 +3,7 @@
 import { TabsContent } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useMemo, useState } from "react"
 import {
   useReactTable,
@@ -17,24 +18,55 @@ const configurationSchema = z.object({
   id: z.string(),
   file: z.string(),
   ai: z.string(),
+  dynamicColumns: z.record(z.string(), z.string()).optional(),
 })
 
 type Configuration = z.infer<typeof configurationSchema>
 
+type DynamicColumn = {
+  id: string
+  name: string
+  type: 'text' | 'number' | 'date'
+}
+
 export default function Home() {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
+  const [dynamicColumns, setDynamicColumns] = useState<DynamicColumn[]>([])
+  const [isAddColumnOpen, setIsAddColumnOpen] = useState(false)
+  const [newColumnName, setNewColumnName] = useState("")
 
-  const data: Configuration[] = useMemo(
-    () => [
+  const data: Configuration[] = useMemo(() => {
+    const baseData = [
       { id: "1", file: "Waiting for configuration...", ai: "Waiting for configuration..." },
       { id: "2", file: "Waiting for configuration...", ai: "Waiting for configuration..." },
       { id: "3", file: "Waiting for configuration...", ai: "Waiting for configuration..." },
-    ],
-    []
-  )
+    ]
+    
+    // Add dynamic column data
+    return baseData.map(row => ({
+      ...row,
+      dynamicColumns: dynamicColumns.reduce((acc, col) => ({
+        ...acc,
+        [col.id]: "Waiting for configuration..."
+      }), {} as Record<string, string>)
+    }))
+  }, [dynamicColumns])
 
-  const columns: ColumnDef<Configuration>[] = useMemo(
-    () => [
+  const addColumn = () => {
+    if (newColumnName.trim()) {
+      const newColumn: DynamicColumn = {
+        id: `col_${Date.now()}`,
+        name: newColumnName.trim(),
+        type: 'text'
+      }
+      setDynamicColumns(prev => [...prev, newColumn])
+      setNewColumnName("")
+      setIsAddColumnOpen(false)
+    }
+  }
+
+  const columns: ColumnDef<Configuration>[] = useMemo(() => {
+    const baseColumns: ColumnDef<Configuration>[] = [
       {
         id: "select",
         header: ({ table }) => (
@@ -88,9 +120,44 @@ export default function Home() {
           </div>
         ),
       },
-    ],
-    []
-  )
+    ]
+
+    // Add dynamic columns
+    const dynamicColumnDefs: ColumnDef<Configuration>[] = dynamicColumns.map(col => ({
+      id: col.id,
+      header: () => (
+        <div className="flex items-center gap-1">
+          <span className="text-sm font-medium">{col.name}</span>
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="text-muted-foreground">
+          {row.original.dynamicColumns?.[col.id] || "Waiting for configuration..."}
+        </div>
+      ),
+    }))
+
+    // Add column button
+    const addColumnDef: ColumnDef<Configuration> = {
+      id: "add-column",
+      header: () => (
+        <PopoverTrigger asChild>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8 border-dashed border-2 border-gray-300 hover:border-gray-400 rounded"
+          >
+            <span className="text-base text-gray-500">+</span>
+          </Button>
+        </PopoverTrigger>
+      ),
+      cell: () => <div className="w-12"></div>,
+      enableSorting: false,
+      enableHiding: false,
+    }
+
+    return [...baseColumns, ...dynamicColumnDefs, addColumnDef]
+  }, [dynamicColumns])
 
   const table = useReactTable({
     data,
@@ -108,13 +175,13 @@ export default function Home() {
         <div className="space-y-4">
           <div className="flex items-center justify-end gap-2 mb-4">
             <Button variant="ghost" size="icon" className="h-8 w-8">
-              <span className="text-base">+</span>
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
               <span className="text-base">⋯</span>
             </Button>
           </div>
-          <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+          
+          {/* Table wrapped in Popover */}
+          <Popover open={isAddColumnOpen} onOpenChange={setIsAddColumnOpen}>
+            <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
             <Table className="border-collapse">
               <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (
@@ -124,6 +191,7 @@ export default function Home() {
                         key={header.id} 
                         className={`
                           ${header.id === "select" ? "w-12" : ""} 
+                          ${header.id === "add-column" ? "w-16" : ""} 
                           border-r border-gray-200 last:border-r-0 
                           bg-gray-50 font-semibold text-gray-700 
                           px-4 py-3 text-left text-sm
@@ -174,7 +242,47 @@ export default function Home() {
                 )}
               </TableBody>
             </Table>
-          </div>
+            </div>
+            
+            <PopoverContent className="w-80" align="end">
+              <div className="space-y-4">
+                <h4 className="font-medium text-sm">Add Column</h4>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Column Name</label>
+                  <input
+                    type="text"
+                    value={newColumnName}
+                    onChange={(e) => setNewColumnName(e.target.value)}
+                    placeholder="Enter column name"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        addColumn()
+                      }
+                    }}
+                    autoFocus
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={addColumn} size="sm" className="flex-1">
+                    Add Column
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      setIsAddColumnOpen(false)
+                      setNewColumnName("")
+                    }} 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </TabsContent>
       <TabsContent value="review">
