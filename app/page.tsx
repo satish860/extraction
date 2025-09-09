@@ -86,66 +86,82 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 space-y-4">
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id} className="font-medium">
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+        <div className="flex-1 space-y-4">
+          <TabsContent value="main" className="flex-1 mt-0">
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <TableRow key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => (
+                        <TableHead key={header.id} className="font-medium">
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                        </TableHead>
+                      ))}
+                    </TableRow>
                   ))}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </TableHeader>
+                <TableBody>
+                  {table.getRowModel().rows?.length ? (
+                    table.getRowModel().rows.map((row) => (
+                      <TableRow
+                        key={row.id}
+                        data-state={row.getIsSelected() && "selected"}
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell key={cell.id}>
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={columns.length} className="h-24 text-center">
+                        No results.
                       </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={columns.length} className="h-24 text-center">
-                    No results.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
-
-      <div className="mt-6 border-t pt-4">
-        <div className="flex items-center justify-between">
-          <Button variant="ghost" className="text-muted-foreground">
-            <Plus className="h-4 w-4 mr-2" />
-            New entity
-          </Button>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
           
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList>
-              <TabsTrigger value="main">Main</TabsTrigger>
-              <TabsTrigger value="newview">New view</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <TabsContent value="newview" className="flex-1 mt-0">
+            <div className="rounded-md border h-64 flex items-center justify-center">
+              <div className="text-center text-muted-foreground">
+                <Plus className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                New view content would go here
+              </div>
+            </div>
+          </TabsContent>
         </div>
-      </div>
+
+        <div className="mt-6 border-t pt-4">
+          <div className="flex items-center justify-between">
+            <Button variant="ghost" className="text-muted-foreground">
+              <Plus className="h-4 w-4 mr-2" />
+              New entity
+            </Button>
+            
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="sm" className="text-muted-foreground">
+                Sort and Filter
+              </Button>
+              <TabsList className="grid w-auto grid-cols-2">
+                <TabsTrigger value="main">Main</TabsTrigger>
+                <TabsTrigger value="newview">New view</TabsTrigger>
+              </TabsList>
+            </div>
+          </div>
+        </div>
+      </Tabs>
     </div>
   )
 }
