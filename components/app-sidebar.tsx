@@ -7,16 +7,10 @@ import {
   FolderPlus,
   BookOpen,
   Users,
-  Search,
-  Settings,
-  FileText,
   Bot,
-  Database,
-  Building2,
-  BarChart3,
-  Package,
-  FileSpreadsheet,
-  Lightbulb
+  Search,
+  Plus,
+  FileText
 } from "lucide-react"
 
 import {
@@ -30,9 +24,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
 
 const data = {
@@ -45,112 +36,38 @@ const data = {
           icon: Home,
         },
         {
-          title: "New agent",
+          title: "New Agent",
           icon: UserPlus,
         },
         {
-          title: "New case",
+          title: "New Case",
           icon: FolderPlus,
         },
-      ],
-    },
-    {
-      title: "Knowledge Hub",
-      items: [
         {
           title: "Knowledge Hub",
           icon: BookOpen,
         },
         {
-          title: "Invite users",
+          title: "Invite Users",
           icon: Users,
         },
       ],
     },
-    {
-      title: "Search & Tools",
-      items: [
-        {
-          title: "Search agents",
-          icon: Search,
-        },
-        {
-          title: "All Selected Quantity Docs",
-          icon: FileText,
-        },
-        {
-          title: "DARWIN: Multi-Select",
-          icon: Settings,
-        },
-        {
-          title: "DARWIN: Split/Merge",
-          icon: Settings,
-        },
-        {
-          title: "See all cases",
-          icon: FileText,
-        },
-      ],
-    },
-    {
-      title: "Agents & Analysis",
-      items: [
-        {
-          title: "All agents",
-          icon: Bot,
-        },
-        {
-          title: "CdFs",
-          icon: Database,
-        },
-        {
-          title: "CIM Triage",
-          icon: BarChart3,
-        },
-        {
-          title: "Darwin Changelog POC",
-          icon: FileSpreadsheet,
-        },
-        {
-          title: "Deal Analysis Agent",
-          icon: BarChart3,
-        },
-        {
-          title: "Demo CIM",
-          icon: Building2,
-        },
-      ],
-    },
-    {
-      title: "Documentation",
-      items: [
-        {
-          title: "Documentation2",
-          icon: FileText,
-        },
-        {
-          title: "GO - Builder Documentation",
-          icon: Package,
-        },
-        {
-          title: "Inventory Receiving",
-          icon: Package,
-        },
-        {
-          title: "LLM Review Review",
-          icon: Lightbulb,
-        },
-        {
-          title: "LLM Review Review2",
-          icon: Lightbulb,
-        },
-        {
-          title: "Rules Ground Truth",
-          icon: FileText,
-        },
-      ],
-    },
   ],
+  searchAgents: {
+    title: "Search for Agents",
+    action: {
+      title: "Click here to add Agents",
+      icon: Plus,
+    },
+  },
+  knowledgeAgents: {
+    title: "Knowledge Agents", 
+    action: {
+      title: "Click here to add Knowledge Documents",
+      icon: FileText,
+    },
+  },
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -162,16 +79,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <Bot className="h-4 w-4" />
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-medium">Jades Team</span>
+            <span className="text-sm font-medium">Team Name</span>
           </div>
         </div>
       </SidebarHeader>
       <SidebarContent>
         {data.navMain.map((group) => (
           <SidebarGroup key={group.title}>
-            <SidebarGroupLabel className="text-xs font-medium text-muted-foreground">
-              {group.title}
-            </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {group.items.map((item) => (
@@ -186,6 +100,38 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarGroupContent>
           </SidebarGroup>
         ))}
+        
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs font-medium text-muted-foreground">
+            {data.searchAgents.title}
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton className="text-muted-foreground hover:text-foreground">
+                  <data.searchAgents.action.icon className="h-4 w-4" />
+                  <span>{data.searchAgents.action.title}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs font-medium text-muted-foreground">
+            {data.knowledgeAgents.title}
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton className="text-muted-foreground hover:text-foreground">
+                  <data.knowledgeAgents.action.icon className="h-4 w-4" />
+                  <span>{data.knowledgeAgents.action.title}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
         <div className="flex items-center justify-between p-2 text-xs text-muted-foreground">
