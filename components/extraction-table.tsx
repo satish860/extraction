@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Popover, PopoverContent } from "@/components/ui/popover"
 import { useMemo, useState, useCallback, useRef } from "react"
 import {
   useReactTable,
@@ -13,6 +13,8 @@ import {
 } from "@tanstack/react-table"
 import { Upload } from "lucide-react"
 import { z } from "zod"
+import { FieldTypeSelector } from "@/components/field-management/field-type-selector"
+import { getFieldTypeConfig, type FieldType } from "@/components/field-management/field-types"
 
 const configurationSchema = z.object({
   id: z.string(),
@@ -26,7 +28,7 @@ type Configuration = z.infer<typeof configurationSchema>
 type DynamicColumn = {
   id: string
   name: string
-  type: 'text' | 'number' | 'date'
+  type: FieldType
 }
 
 export function ExtractionTable() {
@@ -34,6 +36,7 @@ export function ExtractionTable() {
   const [dynamicColumns, setDynamicColumns] = useState<DynamicColumn[]>([])
   const [isAddColumnOpen, setIsAddColumnOpen] = useState(false)
   const [newColumnName, setNewColumnName] = useState("")
+  const [selectedFieldType, setSelectedFieldType] = useState<FieldType | null>(null)
   const [files, setFiles] = useState<File[]>([])
   const [isDragOver, setIsDragOver] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -99,17 +102,29 @@ export function ExtractionTable() {
     fileInputRef.current?.click()
   }, [])
 
+  const handleFieldTypeSelect = useCallback((fieldType: FieldType) => {
+    setSelectedFieldType(fieldType)
+    setIsAddColumnOpen(true)
+  }, [])
+
   const addColumn = () => {
-    if (newColumnName.trim()) {
+    if (newColumnName.trim() && selectedFieldType) {
       const newColumn: DynamicColumn = {
         id: `col_${Date.now()}`,
         name: newColumnName.trim(),
-        type: 'text'
+        type: selectedFieldType
       }
       setDynamicColumns(prev => [...prev, newColumn])
       setNewColumnName("")
+      setSelectedFieldType(null)
       setIsAddColumnOpen(false)
     }
+  }
+
+  const cancelAddColumn = () => {
+    setNewColumnName("")
+    setSelectedFieldType(null)
+    setIsAddColumnOpen(false)
   }
 
   const columns: ColumnDef<Configuration>[] = useMemo(() => {
@@ -182,34 +197,32 @@ export function ExtractionTable() {
     ]
 
     // Add dynamic columns
-    const dynamicColumnDefs: ColumnDef<Configuration>[] = dynamicColumns.map(col => ({
-      id: col.id,
-      header: () => (
-        <div className="flex items-center w-fit">
-          <span className="text-sm font-semibold">{col.name}</span>
-        </div>
-      ),
-      cell: ({ row }) => (
-        <div className="text-gray-500 text-sm font-medium w-fit px-1">
-          {row.original.dynamicColumns?.[col.id] || "Waiting for configuration..."}
-        </div>
-      ),
-    }))
+    const dynamicColumnDefs: ColumnDef<Configuration>[] = dynamicColumns.map(col => {
+      const fieldConfig = getFieldTypeConfig(col.type)
+      const Icon = fieldConfig.icon
+      
+      return {
+        id: col.id,
+        header: () => (
+          <div className="flex items-center gap-2 w-fit">
+            <Icon className="h-4 w-4 text-gray-600" />
+            <span className="text-sm font-semibold">{col.name}</span>
+          </div>
+        ),
+        cell: ({ row }) => (
+          <div className="text-gray-500 text-sm font-medium w-fit px-1">
+            {row.original.dynamicColumns?.[col.id] || "Waiting for configuration..."}
+          </div>
+        ),
+      }
+    })
 
     // Add column button - takes remaining space
     const addColumnDef: ColumnDef<Configuration> = {
       id: "add-column",
       header: () => (
         <div className="flex justify-start w-full">
-          <PopoverTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-8 w-8 border-dashed border-2 border-gray-300 hover:border-gray-400 rounded"
-            >
-              <span className="text-base text-gray-500">+</span>
-            </Button>
-          </PopoverTrigger>
+          <FieldTypeSelector onSelect={handleFieldTypeSelect} />
         </div>
       ),
       cell: () => <div className="w-full"></div>,
@@ -219,7 +232,7 @@ export function ExtractionTable() {
     }
 
     return [...baseColumns, ...dynamicColumnDefs, addColumnDef]
-  }, [dynamicColumns])
+  }, [dynamicColumns, handleFieldTypeSelect, triggerFileUpload])
 
   const table = useReactTable({
     data,
@@ -328,40 +341,56 @@ export function ExtractionTable() {
         
         <PopoverContent className="w-80" align="end">
           <div className="space-y-4">
-            <h4 className="font-medium text-sm">Add Column</h4>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Column Name</label>
-              <input
-                type="text"
-                value={newColumnName}
-                onChange={(e) => setNewColumnName(e.target.value)}
-                placeholder="Enter column name"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    addColumn()
-                  }
-                }}
-                autoFocus
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={addColumn} size="sm" className="flex-1">
-                Add Column
-              </Button>
-              <Button 
-                onClick={() => {
-                  setIsAddColumnOpen(false)
-                  setNewColumnName("")
-                }} 
-                variant="outline" 
-                size="sm" 
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-            </div>
+            <h4 className="font-medium text-sm">
+              {selectedFieldType ? 'Configure Column' : 'Add Column'}
+            </h4>
+            
+            {selectedFieldType && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                  {(() => {
+                    const fieldConfig = getFieldTypeConfig(selectedFieldType)
+                    const Icon = fieldConfig.icon
+                    return (
+                      <>
+                        <Icon className="h-4 w-4 text-gray-600" />
+                        <span className="text-sm font-medium">{fieldConfig.name}</span>
+                      </>
+                    )
+                  })()}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Column Name</label>
+                  <input
+                    type="text"
+                    value={newColumnName}
+                    onChange={(e) => setNewColumnName(e.target.value)}
+                    placeholder="Enter column name"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        addColumn()
+                      }
+                    }}
+                    autoFocus
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={addColumn} size="sm" className="flex-1">
+                    Add Column
+                  </Button>
+                  <Button 
+                    onClick={cancelAddColumn}
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </PopoverContent>
       </Popover>
