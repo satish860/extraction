@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { useMemo, useState, useCallback } from "react"
+import { useMemo, useState, useCallback, useRef } from "react"
 import {
   useReactTable,
   getCoreRowModel,
@@ -11,6 +11,7 @@ import {
   type ColumnDef,
   type RowSelectionState,
 } from "@tanstack/react-table"
+import { Upload } from "lucide-react"
 import { z } from "zod"
 
 const configurationSchema = z.object({
@@ -35,6 +36,7 @@ export function ExtractionTable() {
   const [newColumnName, setNewColumnName] = useState("")
   const [files, setFiles] = useState<File[]>([])
   const [isDragOver, setIsDragOver] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const data: Configuration[] = useMemo(() => {
     // If no files are dropped, show placeholder rows
@@ -84,6 +86,19 @@ export function ExtractionTable() {
     setFiles(prev => [...prev, ...droppedFiles])
   }, [])
 
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const uploadedFiles = Array.from(e.target.files || [])
+    setFiles(prev => [...prev, ...uploadedFiles])
+    // Reset input value to allow selecting the same files again
+    if (e.target) {
+      e.target.value = ''
+    }
+  }, [])
+
+  const triggerFileUpload = useCallback(() => {
+    fileInputRef.current?.click()
+  }, [])
+
   const addColumn = () => {
     if (newColumnName.trim()) {
       const newColumn: DynamicColumn = {
@@ -127,25 +142,39 @@ export function ExtractionTable() {
       {
         accessorKey: "file",
         header: () => (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 group w-fit">
             <span className="text-sm font-semibold">File</span>
+            <button
+              onClick={triggerFileUpload}
+              className="opacity-30 hover:opacity-100 group-hover:opacity-100 transition-all duration-200 p-0.5 rounded hover:bg-gray-200"
+              title="Click to upload files"
+            >
+              <Upload className="h-3 w-3 text-gray-600" />
+            </button>
           </div>
         ),
         cell: ({ getValue }) => (
-          <div className="text-gray-500 text-sm font-medium">
-            {getValue() as string}
+          <div className="group flex items-center gap-1 text-gray-500 text-sm font-medium hover:bg-gray-50 px-1 py-1 rounded w-fit">
+            <span>{getValue() as string}</span>
+            <button
+              onClick={triggerFileUpload}
+              className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-0.5 rounded hover:bg-gray-200 flex-shrink-0"
+              title="Click to upload files"
+            >
+              <Upload className="h-3 w-3 text-gray-600" />
+            </button>
           </div>
         ),
       },
       {
         accessorKey: "ai",
         header: () => (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center w-fit">
             <span className="text-sm font-semibold">AI</span>
           </div>
         ),
         cell: ({ getValue }) => (
-          <div className="text-gray-500 text-sm font-medium">
+          <div className="text-gray-500 text-sm font-medium w-fit px-1">
             {getValue() as string}
           </div>
         ),
@@ -156,34 +185,37 @@ export function ExtractionTable() {
     const dynamicColumnDefs: ColumnDef<Configuration>[] = dynamicColumns.map(col => ({
       id: col.id,
       header: () => (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center w-fit">
           <span className="text-sm font-semibold">{col.name}</span>
         </div>
       ),
       cell: ({ row }) => (
-        <div className="text-gray-500 text-sm font-medium">
+        <div className="text-gray-500 text-sm font-medium w-fit px-1">
           {row.original.dynamicColumns?.[col.id] || "Waiting for configuration..."}
         </div>
       ),
     }))
 
-    // Add column button
+    // Add column button - takes remaining space
     const addColumnDef: ColumnDef<Configuration> = {
       id: "add-column",
       header: () => (
-        <PopoverTrigger asChild>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-8 w-8 border-dashed border-2 border-gray-300 hover:border-gray-400 rounded"
-          >
-            <span className="text-base text-gray-500">+</span>
-          </Button>
-        </PopoverTrigger>
+        <div className="flex justify-start w-full">
+          <PopoverTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8 border-dashed border-2 border-gray-300 hover:border-gray-400 rounded"
+            >
+              <span className="text-base text-gray-500">+</span>
+            </Button>
+          </PopoverTrigger>
+        </div>
       ),
-      cell: () => <div className="w-12"></div>,
+      cell: () => <div className="w-full"></div>,
       enableSorting: false,
       enableHiding: false,
+      size: 9999, // Force this column to take remaining space
     }
 
     return [...baseColumns, ...dynamicColumnDefs, addColumnDef]
@@ -220,10 +252,20 @@ export function ExtractionTable() {
         </div>
       )}
       
+      {/* Hidden file input for upload functionality */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        onChange={handleFileUpload}
+        className="hidden"
+        accept="*/*"
+      />
+      
       {/* Table wrapped in Popover */}
       <Popover open={isAddColumnOpen} onOpenChange={setIsAddColumnOpen}>
         <div className="bg-white">
-          <Table className="border-collapse">
+          <Table className="border-collapse w-full table-auto">
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id} className="border-b border-gray-200 bg-gray-50">
@@ -231,11 +273,10 @@ export function ExtractionTable() {
                     <TableHead 
                       key={header.id} 
                       className={`
-                        ${header.id === "select" ? "w-12" : ""} 
-                        ${header.id === "add-column" ? "w-16" : ""} 
+                        ${header.id === "select" ? "w-12" : header.id === "add-column" ? "w-full" : "w-auto"} 
                         border-r border-gray-200 last:border-r-0 
                         bg-gray-50 font-semibold text-gray-700 
-                        px-4 py-3 text-left text-sm
+                        px-2 py-3 text-left text-sm
                         hover:bg-gray-100 transition-colors
                       `}
                     >
@@ -261,7 +302,7 @@ export function ExtractionTable() {
                     {row.getVisibleCells().map((cell) => (
                       <TableCell 
                         key={cell.id}
-                        className="border-r border-gray-200 last:border-r-0 px-4 py-3 text-sm focus-within:bg-blue-50 transition-colors"
+                        className={`border-r border-gray-200 last:border-r-0 px-2 py-3 text-sm focus-within:bg-blue-50 transition-colors ${cell.column.id === "add-column" ? "w-full" : "w-auto"}`}
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
