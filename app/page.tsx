@@ -4,7 +4,7 @@ import { TabsContent } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { useMemo, useState } from "react"
+import { useMemo, useState, useCallback } from "react"
 import {
   useReactTable,
   getCoreRowModel,
@@ -34,23 +34,56 @@ export default function Home() {
   const [dynamicColumns, setDynamicColumns] = useState<DynamicColumn[]>([])
   const [isAddColumnOpen, setIsAddColumnOpen] = useState(false)
   const [newColumnName, setNewColumnName] = useState("")
+  const [files, setFiles] = useState<File[]>([])
+  const [isDragOver, setIsDragOver] = useState(false)
 
   const data: Configuration[] = useMemo(() => {
-    const baseData = [
-      { id: "1", file: "Waiting for configuration...", ai: "Waiting for configuration..." },
-      { id: "2", file: "Waiting for configuration...", ai: "Waiting for configuration..." },
-      { id: "3", file: "Waiting for configuration...", ai: "Waiting for configuration..." },
-    ]
+    // If no files are dropped, show placeholder rows
+    if (files.length === 0) {
+      const baseData = [
+        { id: "1", file: "Waiting for configuration...", ai: "Waiting for configuration..." },
+        { id: "2", file: "Waiting for configuration...", ai: "Waiting for configuration..." },
+        { id: "3", file: "Waiting for configuration...", ai: "Waiting for configuration..." },
+      ]
+      
+      return baseData.map(row => ({
+        ...row,
+        dynamicColumns: dynamicColumns.reduce((acc, col) => ({
+          ...acc,
+          [col.id]: "Waiting for configuration..."
+        }), {} as Record<string, string>)
+      }))
+    }
     
-    // Add dynamic column data
-    return baseData.map(row => ({
-      ...row,
+    // Create rows from dropped files
+    return files.map((file, index) => ({
+      id: `file_${index}`,
+      file: file.name,
+      ai: "Ready for processing...",
       dynamicColumns: dynamicColumns.reduce((acc, col) => ({
         ...acc,
-        [col.id]: "Waiting for configuration..."
+        [col.id]: "Pending extraction..."
       }), {} as Record<string, string>)
     }))
-  }, [dynamicColumns])
+  }, [files, dynamicColumns])
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragOver(true)
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragOver(false)
+  }, [])
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragOver(false)
+    
+    const droppedFiles = Array.from(e.dataTransfer.files)
+    setFiles(prev => [...prev, ...droppedFiles])
+  }, [])
 
   const addColumn = () => {
     if (newColumnName.trim()) {
@@ -170,7 +203,27 @@ export default function Home() {
   return (
     <div>
       <TabsContent value="build">
-        <div>
+        <div 
+          className={`relative min-h-[600px] transition-all duration-200 ${
+            isDragOver 
+              ? 'bg-blue-50 border-2 border-dashed border-blue-300' 
+              : 'bg-white'
+          }`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          {isDragOver && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-blue-50/80 backdrop-blur-sm">
+              <div className="text-center p-8 border-2 border-dashed border-blue-400 bg-white rounded-lg shadow-lg">
+                <div className="text-4xl mb-4">📁</div>
+                <h3 className="text-xl font-semibold text-blue-600 mb-2">Drop your files here</h3>
+                <p className="text-gray-600">Release to add files to the table</p>
+              </div>
+            </div>
+          )}
+          
+          
           {/* Table wrapped in Popover */}
           <Popover open={isAddColumnOpen} onOpenChange={setIsAddColumnOpen}>
             <div className="bg-white">
